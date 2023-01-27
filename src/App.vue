@@ -16,6 +16,15 @@
         </b-tab-item>
       </b-tabs>
     </div>
+    <div class="container box">
+      <b-field label="是否播放音樂時也鎖定螢幕">
+        <b-switch
+          size="is-large"
+          v-model="activeLockScreen"
+          @input="lockScreenSwitchChanged"
+        >{{ getLockScreenStatusText }}</b-switch>
+      </b-field>
+    </div>
     <hr class="hr">
     <div class="section">
       <Player
@@ -34,6 +43,20 @@ import Countdown from '@/components/Countdown.vue';
 import Alarm from '@/components/Alarm.vue';
 import Player from '@/components/Player.vue';
 
+const lockScreenKey = 'lock_screen';
+
+function getBoolFromLocalStorage(key: string): boolean {
+  const value = window.localStorage.getItem(key);
+  if (value) {
+    return value === 'true';
+  }
+  return false;
+}
+
+function setBoolFromLocalStorage(key: string, value: boolean) {
+  window.localStorage.setItem(key, value.toString());
+}
+
 Vue.use(Buefy);
 
 @Component({
@@ -44,13 +67,31 @@ Vue.use(Buefy);
   },
 })
 export default class App extends Vue {
+  private activeLockScreen = false;
+
+  constructor() {
+    super();
+    this.activeLockScreen = getBoolFromLocalStorage(lockScreenKey);
+  }
+
   $refs!: {
     player: HTMLFormElement;
   }
 
   private activeTab = 0;
 
+  get getLockScreenStatusText(): string {
+    return this.activeLockScreen ? '已啟用播放音樂時鎖定螢幕' : '不鎖定';
+  }
+
+  private lockScreenSwitchChanged() {
+    setBoolFromLocalStorage(lockScreenKey, this.activeLockScreen);
+  }
+
   private rest() {
+    if (this.activeLockScreen) {
+      fetch('/close');
+    }
     this.$refs.player.play();
   }
 
